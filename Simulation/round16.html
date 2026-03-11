@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>World Cup 2026 Round of 16</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+}
+
+h1{
+margin-top:20px;
+}
+
+button{
+padding:10px 18px;
+margin:6px;
+border:none;
+border-radius:6px;
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>World Cup 2026 Round of 16 Voting</h1>
+
+<button onclick="window.location.href='round32.html'" style="padding:10px 20px; margin:10px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer;">Back to Round of 32</button>
+
+<button onclick="resetRound16()" style="padding:10px 20px; margin:10px; background:#f59e0b; color:white; border:none; border-radius:6px; cursor:pointer;">Reset Round of 16 Votes</button>
+
+<button onclick="window.location.href='quarterfinals.html'" style="padding:10px 20px; margin:10px; background:#d946ef; color:white; border:none; border-radius:6px; cursor:pointer;">Quarterfinals</button>
+
+<button onclick="window.location.href='semifinals.html'" style="padding:10px 20px; margin:10px; background:#06b6d4; color:white; border:none; border-radius:6px; cursor:pointer;">Semifinals</button>
+
+<button onclick="window.location.href='final.html'" style="padding:10px 20px; margin:10px; background:#fbbf24; color:black; border:none; border-radius:6px; cursor:pointer;">Final</button>
+
+<div id="message"></div>
+
+<div id="round16"></div>
+
+<script>
+
+const teamsStrength = {
+
+Brazil:94,
+Argentina:93,
+France:92,
+Germany:90,
+Spain:89,
+England:88,
+Portugal:87,
+Netherlands:86,
+Italy:85,
+Belgium:84,
+Uruguay:83,
+Croatia:82,
+Mexico:81,
+USA:80,
+"United States":80, // Alias for USA
+Japan:79,
+"South Korea":78,
+Morocco:82,
+Canada:75,
+Australia:76,
+Ecuador:77,
+"Ivory Coast":78,
+Tunisia:74,
+Iran:75,
+"Saudi Arabia":73,
+Senegal:81,
+Norway:80,
+Austria:79,
+Algeria:78,
+Colombia:82,
+Uzbekistan:72,
+Ghana:76,
+Panama:70,
+Paraguay:75,
+Scotland:74,
+Egypt:76,
+Turkey:78,
+Sweden:80,
+Poland:79,
+Ukraine:78,
+"South Africa":73,
+Qatar:79,
+Switzerland:82,
+Haiti:68,
+"Cape Verde":71,
+Jordan:70,
+"Curaçao":69,
+"New Zealand":74,
+"UEFA Path A winner":78,
+"UEFA Path B winner":75,
+"UEFA Path C winner":76,
+"UEFA Path D winner":77,
+"IC Path 1 winner":74,
+"IC Path 2 winner":73
+
+};
+
+function getVotes(group, team){
+
+let votes = JSON.parse(localStorage.getItem("votes") || "{}")
+
+if(!votes[group]) votes[group] = {}
+
+return votes[group][team] || 0
+
+}
+
+function updateVotes(group, team){
+
+let votes = JSON.parse(localStorage.getItem("votes") || "{}")
+
+if(!votes[group]) votes[group] = {}
+
+votes[group][team] = (votes[group][team] || 0) + 1
+
+localStorage.setItem("votes", JSON.stringify(votes))
+
+}
+
+let matchups = []
+
+function getQualifiedTeams(){
+
+let qualified = []
+
+let matchesData = JSON.parse(localStorage.getItem("round32_matches") || "[]")
+
+if(matchesData.length === 0){
+
+// If no data, calculate from group stage
+
+const groups = {
+
+A:["Mexico","South Africa","South Korea","UEFA Path D winner"],
+B:["Canada","UEFA Path A winner","Qatar","Switzerland"],
+C:["Brazil","Morocco","Haiti","Scotland"],
+D:["United States","Paraguay","Australia","UEFA Path C winner"],
+E:["Germany","Curaçao","Ivory Coast","Ecuador"],
+F:["Netherlands","Japan","UEFA Path B winner","Tunisia"],
+G:["Belgium","Egypt","Iran","New Zealand"],
+H:["Spain","Cape Verde","Saudi Arabia","Uruguay"],
+I:["France","Senegal","IC Path 2 winner","Norway"],
+J:["Argentina","Algeria","Austria","Jordan"],
+K:["Portugal","IC Path 1 winner","Uzbekistan","Colombia"],
+L:["England","Croatia","Ghana","Panama"]
+
+}
+
+let qualified_temp = {}
+
+let thirdPlaced = []
+
+for(let g in groups){
+
+let groupTeams = [...groups[g]]
+
+let ranked = groupTeams.sort((a,b)=>teamsStrength[b]-teamsStrength[a])
+
+qualified_temp[g] = {1: ranked[0], 2: ranked[1]}
+
+if(ranked[2]) thirdPlaced.push({team: ranked[2], strength: teamsStrength[ranked[2]]})
+
+}
+
+thirdPlaced.sort((a,b) => b.strength - a.strength)
+
+let top8Third = thirdPlaced.slice(0,8).map(t => t.team)
+
+let ro32Matchups = [
+
+{home: qualified_temp.A[1], away: qualified_temp.B[2]},
+{home: qualified_temp.C[1], away: qualified_temp.D[2]},
+{home: qualified_temp.E[1], away: qualified_temp.F[2]},
+{home: qualified_temp.G[1], away: qualified_temp.H[2]},
+{home: qualified_temp.B[1], away: qualified_temp.A[2]},
+{home: qualified_temp.D[1], away: qualified_temp.C[2]},
+{home: qualified_temp.F[1], away: qualified_temp.E[2]},
+{home: qualified_temp.H[1], away: qualified_temp.G[2]},
+{home: qualified_temp.I[1], away: qualified_temp.J[2]},
+{home: qualified_temp.K[1], away: qualified_temp.L[2]},
+{home: qualified_temp.J[1], away: qualified_temp.I[2]},
+{home: qualified_temp.L[1], away: qualified_temp.K[2]},
+{home: top8Third[0], away: top8Third[1]},
+{home: top8Third[2], away: top8Third[3]},
+{home: top8Third[4], away: top8Third[5]},
+{home: top8Third[6], away: top8Third[7]}
+]
+
+ro32Matchups.forEach(match => {
+
+let homeStrength = teamsStrength[match.home]
+
+let awayStrength = teamsStrength[match.away]
+
+let winner = homeStrength > awayStrength ? match.home : match.away
+
+qualified.push(winner)
+
+})
+
+} else {
+
+matchesData.forEach(winner => {
+
+qualified.push(winner)
+
+})
+
+}
+
+return qualified
+
+}
+
+function showRound16(){
+
+let qualified = getQualifiedTeams()
+
+matchups = [
+
+{home: qualified[0], away: qualified[1]},
+
+{home: qualified[2], away: qualified[3]},
+
+{home: qualified[4], away: qualified[5]},
+
+{home: qualified[6], away: qualified[7]},
+
+{home: qualified[8], away: qualified[9]},
+
+{home: qualified[10], away: qualified[11]},
+
+{home: qualified[12], away: qualified[13]},
+
+{home: qualified[14], away: qualified[15]}
+
+]
+
+let container = document.getElementById("round16")
+
+container.innerHTML = ""
+
+matchups.forEach((match, index) => {
+
+let matchDiv = document.createElement("div")
+
+matchDiv.id = "match-" + index
+
+matchDiv.style.margin = "20px"
+
+matchDiv.style.padding = "10px"
+
+matchDiv.style.border = "1px solid white"
+
+matchDiv.style.display = "inline-block"
+
+let homeVotes = getVotes("match16_" + index, match.home) || 0
+
+let awayVotes = getVotes("match16_" + index, match.away) || 0
+
+let hasVoted = localStorage.getItem("vote_match16_" + index)
+
+matchDiv.innerHTML = `<h3>Match ${index+1}</h3>`
+
+if(hasVoted){
+
+let votedTeam = localStorage.getItem("vote_match16_" + index)
+
+let homeStrength = teamsStrength[match.home]
+
+let awayStrength = teamsStrength[match.away]
+
+let winner = homeStrength > awayStrength ? match.home : match.away
+
+let qualifiedText = winner === votedTeam ? "✓ Your Vote Qualified!" : "Qualified to Quarterfinals"
+
+matchDiv.innerHTML += `<div style="color: #4ade80; font-weight: bold; margin: 10px 0;">${match.home} (${homeVotes} votes) vs ${match.away} (${awayVotes} votes)<br>Your vote: ${votedTeam}<br><br><span style="color: #fbbf24; font-size: 16px;">🏆 ${winner} - ${qualifiedText}</span></div>`
+
+} else {
+
+matchDiv.innerHTML += `<button onclick="voteMatch16(${index}, '${match.home.replace(/'/g, "\\'")}')">${match.home} (${homeVotes} votes)</button> vs <button onclick="voteMatch16(${index}, '${match.away.replace(/'/g, "\\'")}')">${match.away} (${awayVotes} votes)</button>`
+
+}
+
+container.appendChild(matchDiv)
+
+})
+
+}
+
+function voteMatch16(matchIndex, team){
+
+if(localStorage.getItem("vote_match16_" + matchIndex)){
+
+alert("You already voted in Match " + (matchIndex+1))
+
+return
+
+}
+
+localStorage.setItem("vote_match16_" + matchIndex, team)
+
+updateVotes("match16_" + matchIndex, team)
+
+alert(`You voted for ${team} in Match ${matchIndex+1}`)
+
+showRound16()
+
+}
+
+function resetRound16(){
+
+for(let i=0; i<8; i++){
+
+localStorage.removeItem("vote_match16_" + i)
+
+}
+
+let votes = JSON.parse(localStorage.getItem("votes") || "{}")
+
+for(let i=0; i<8; i++){
+
+if(votes["match16_" + i]) delete votes["match16_" + i]
+
+}
+
+localStorage.setItem("votes", JSON.stringify(votes))
+
+alert("Round of 16 votes have been reset! You can now vote again.")
+
+showRound16()
+
+}
+
+showRound16()
+
+// Check if user has completed group stage
+function checkGroupStageCompletion(){
+
+const groups = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
+
+let allGroupsVoted = true
+
+for(let g of groups){
+
+if(!localStorage.getItem("vote_"+g)){
+
+allGroupsVoted = false
+
+break
+
+}
+
+}
+
+if(!allGroupsVoted){
+
+document.getElementById("message").innerHTML = `<div style="color: #fbbf24; font-size: 18px; margin: 20px; padding: 20px; background: #1e293b; border-radius: 10px; border: 2px solid #f59e0b;">⚠️ Please predict Group Stage to proceed!</div>`
+
+document.getElementById("round16").innerHTML = ""
+
+}
+
+}
+
+checkGroupStageCompletion()
+
+</script>
+
+<div style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
+  <button onclick="window.location.href='quarterfinals.html'" style="padding: 15px 40px; font-size: 18px; background: #4ade80; color: black; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4); transition: all 0.3s;">Next: Quarterfinals →</button>
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>World Cup 2026 Final</title>
+  <style>
+    body { font-family: Arial; background: #0f172a; color: white; text-align: center; }
+    h1 { margin-top: 20px; }
+    button { padding: 10px 18px; margin: 6px; border: none; border-radius: 6px; background: #22c55e; color: white; cursor: pointer; }
+    button:hover { background: #16a34a; }
+  </style>
+</head>
+<body>
+  <h1>World Cup 2026 Final</h1>
+  <button onclick="window.location.href='semifinals.html'" style="background:#ef4444;">Back to Semifinals</button>
+  <button onclick="resetFinal()" style="background:#f59e0b;">Reset Final Vote</button>
+  <div id="message"></div>
+  <div id="final"></div>
+  <script>
+    const teamsStrength = {
+      Brazil:94, Argentina:93, France:92, Germany:90, Spain:89, England:88, Portugal:87,
+      Netherlands:86, Italy:85, Belgium:84, Uruguay:83, Croatia:82, Mexico:81, USA:80,
+      "United States":80, // Alias for USA
+      Japan:79, "South Korea":78, Morocco:82, Canada:75, Australia:76, Ecuador:77,
+      "Ivory Coast":78, Tunisia:74, Iran:75, "Saudi Arabia":73, Senegal:81, Norway:80,
+      Austria:79, Algeria:78, Colombia:82, Uzbekistan:72, Ghana:76, Panama:70,
+      Paraguay:75, Scotland:74, Egypt:76, Turkey:78, Sweden:80, Poland:79, Ukraine:78,
+      "South Africa":73, Qatar:79, Switzerland:82, Haiti:68, "Cape Verde":71,
+      Jordan:70, "Curaçao":69, "New Zealand":74,
+      "UEFA Path A winner":78, "UEFA Path B winner":75,
+      "UEFA Path C winner":76, "UEFA Path D winner":77,
+      "IC Path 1 winner":74, "IC Path 2 winner":73
+    };
+
+    function getVotes(group, team) {
+      let votes = JSON.parse(localStorage.getItem("votes") || "{}");
+      if (!votes[group]) votes[group] = {};
+      return votes[group][team] || 0;
+    }
+
+    function updateVotes(group, team) {
+      let votes = JSON.parse(localStorage.getItem("votes") || "{}");
+      if (!votes[group]) votes[group] = {};
+      votes[group][team] = (votes[group][team] || 0) + 1;
+      localStorage.setItem("votes", JSON.stringify(votes));
+    }
+
+    function getQualifiedTeams() {
+      // Hardcoded final matchup as requested: Argentina vs Spain
+      // Updated: 2026-03-08 to ensure Spain wins
+      return ["Argentina", "Spain"];
+    }
+      // end getQualifiedTeams
+    function showFinal() {
+      let teams = getQualifiedTeams();
+      if (teams.length < 2) {
+        document.getElementById("final").innerHTML = "<p>No final yet.</p>";
+        return;
+      }
+      let home = teams[0], away = teams[1];
+      let hv = getVotes("matchfinal", home);
+      let av = getVotes("matchfinal", away);
+      let voted = localStorage.getItem("vote_matchfinal");
+      let html = `
+        <div style="text-align:center; margin:40px 0;">
+          <h2 style="color:#ffd700; font-size:48px; margin-bottom:30px;">WORLD CUP 2026 FINAL</h2>
+          <div style="display:flex; justify-content:space-around; align-items:center; max-width:800px; margin:0 auto;">
+            <div style="text-align:center; padding:20px; border:3px solid #22c55e; border-radius:15px; background:linear-gradient(135deg, #1e293b, #0f172a);">
+              <div style="font-size:36px; color:#22c55e; margin-bottom:10px;">${home}</div>
+              <div style="font-size:24px; color:#fbbf24;">Votes: ${hv}</div>
+              <button onclick="voteFinal('${home}')" style="margin-top:15px; padding:15px 30px; font-size:20px; background:#22c55e; color:white; border:none; border-radius:10px; cursor:pointer;">Vote for ${home}</button>
+            </div>
+            <div style="font-size:60px; color:#ef4444;">VS</div>
+            <div style="text-align:center; padding:20px; border:3px solid #3b82f6; border-radius:15px; background:linear-gradient(135deg, #1e293b, #0f172a);">
+              <div style="font-size:36px; color:#3b82f6; margin-bottom:10px;">${away}</div>
+              <div style="font-size:24px; color:#fbbf24;">Votes: ${av}</div>
+              <button onclick="voteFinal('${away}')" style="margin-top:15px; padding:15px 30px; font-size:20px; background:#60a5fa; color:white; border:none; border-radius:10px; cursor:pointer;">Vote for ${away}</button>
+            </div>
+          </div>
+        </div>
+      `;
+      if (voted) {
+        // Special case: Spain wins the final against Argentina
+        let winner = (home === "Argentina" && away === "Spain") ? "Spain" :
+                    (home === "Spain" && away === "Argentina") ? "Spain" :
+                    (teamsStrength[home] > teamsStrength[away] ? home : away);
+        console.log("Final result - Home:", home, "Away:", away, "Winner:", winner);
+        let status = winner === voted ? "✓ Your Vote Won!" : "Winner";
+        html += `<div style="text-align:center; margin-top:40px; color:#4ade80; font-size:24px;">${home} (${hv}) vs ${away} (${av})<br>Your vote: ${voted}<br><br>${winner} - ${status}</div>`;
+      }
+      document.getElementById("final").innerHTML = html;
+    }
+
+    function voteFinal(team) {
+      if (localStorage.getItem("vote_matchfinal")) { alert("You already voted"); return; }
+      localStorage.setItem("vote_matchfinal", team);
+      updateVotes("matchfinal", team);
+      // after vote, show dramatic countdown then reveal champion
+      startCountdown();
+    }
+
+    function resetFinal() {
+      localStorage.removeItem("vote_matchfinal");
+      let v = JSON.parse(localStorage.getItem("votes")||"{}");
+      delete v["matchfinal"];
+      localStorage.setItem("votes", JSON.stringify(v));
+      alert("Final vote reset");
+      showFinal();
+    }
+
+    function checkGroupStageCompletion() {
+      const groups = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+      for (let g of groups) {
+        if (!localStorage.getItem("vote_"+g)) {
+          document.getElementById("message").innerHTML = `<div style="color:#fbbf24;">⚠️ Please predict Group Stage first!</div>`;
+          document.getElementById("final").innerHTML = "";
+          return;
+        }
+      }
+    }
+
+    showFinal();
+    checkGroupStageCompletion();
+
+    // countdown and reveal logic
+    function startCountdown() {
+      const container = document.getElementById('final');
+      container.innerHTML = '';
+      let countdown = 5;
+      const div = document.createElement('div');
+      div.style.fontSize = '120px';
+      div.style.color = '#ff4500';
+      div.style.margin = '50px';
+      div.style.fontWeight = 'bold';
+      div.style.animation = 'countdownPulse 1s infinite';
+      div.textContent = countdown;
+      container.appendChild(div);
+      const timer = setInterval(() => {
+        countdown -= 1;
+        if (countdown > 0) {
+          div.textContent = countdown;
+        } else {
+          clearInterval(timer);
+          revealChampion();
+        }
+      }, 1000);
+    }
+
+    function revealChampion() {
+      const teams = getQualifiedTeams();
+      if (teams.length < 2) return;
+      const home = teams[0];
+      const away = teams[1];
+      const homeStrength = teamsStrength[home];
+      const awayStrength = teamsStrength[away];
+      // Special case: Spain wins the final against Argentina
+      const winner = (home === "Argentina" && away === "Spain") ? "Spain" : 
+                    (home === "Spain" && away === "Argentina") ? "Spain" : 
+                    (homeStrength > awayStrength ? home : away);
+      console.log("Reveal Champion - Home:", home, "Away:", away, "Winner:", winner);
+      const voted = localStorage.getItem('vote_matchfinal');
+      const container = document.getElementById('final');
+      container.innerHTML = '';
+      const champDiv = document.createElement('div');
+      champDiv.style.padding = '50px';
+      champDiv.style.border = '6px solid #ffd700';
+      champDiv.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+      champDiv.style.color = '#ffd700';
+      champDiv.style.fontSize = '48px';
+      champDiv.style.borderRadius = '20px';
+      champDiv.style.textAlign = 'center';
+      champDiv.style.boxShadow = '0 0 50px #ffd700, inset 0 0 50px rgba(255,215,0,0.3)';
+      champDiv.style.position = 'relative';
+      champDiv.innerHTML = `
+        <div style="font-size:60px; font-weight:bold; text-shadow: 0 0 30px #ffd700;">${winner}</div>
+        <div style="font-size:24px; margin:20px 0;">WORLD CUP 2026 CHAMPION</div>
+        ${voted ? `<div style="margin-top:30px; font-size:20px; color:${winner===voted? '#00ff00':'#ff0000'}; text-shadow: 0 0 10px ${winner===voted? '#00ff00':'#ff0000'};">Your vote: ${voted}</div>` : ''}
+      `;
+      container.appendChild(champDiv);
+      // add firework burst effect
+      for (let i = 0; i < 50; i++) {
+        const firework = document.createElement('div');
+        firework.style.position = 'fixed';
+        firework.style.width = '8px';
+        firework.style.height = '8px';
+        firework.style.background = ['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#ffffff'][Math.floor(Math.random()*7)];
+        firework.style.borderRadius = '50%';
+        firework.style.left = '50%';
+        firework.style.top = '50%';
+        firework.style.transform = 'translate(-50%, -50%)';
+        let angle = Math.random() * 2 * Math.PI;
+        let distance = Math.random() * 300 + 100;
+        let x = Math.cos(angle) * distance;
+        let y = Math.sin(angle) * distance;
+        firework.style.setProperty('--x', x + 'px');
+        firework.style.setProperty('--y', y + 'px');
+        firework.style.animation = 'burst 2s ease-out forwards';
+        document.body.appendChild(firework);
+        setTimeout(() => firework.remove(), 2000);
+      }
+      // animations
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes countdownPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+        @keyframes burst { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0); opacity: 0; } }
+        @keyframes champGlow { 0%,100%{box-shadow: 0 0 50px #ffd700;} 50%{box-shadow: 0 0 100px #ffd700, 0 0 150px #ffd700;} }
+        .champGlow { animation: champGlow 2s infinite; }
+      `;
+      document.head.appendChild(style);
+      champDiv.classList.add('champGlow');
+    }
+  </script>
+</body>
+</html>

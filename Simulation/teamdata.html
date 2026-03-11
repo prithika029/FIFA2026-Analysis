@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 FIFA World Cup - Team Data</title>
+  <!-- include Chart.js for individual team statistics graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 30px;
+      padding: 12px 30px;
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .back-btn:hover {
+      background-color: #ff5252;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .team-grid {
+      display: block;
+    }
+
+    .team-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px 0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .team-card:hover {
+      transform: translateX(10px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
+
+    .team-name {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #333;
+      flex-grow: 1;
+    }
+
+    .learn-more-btn {
+      background-color: #4c63ff;
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(76, 99, 255, 0.3);
+    }
+
+    .learn-more-btn:hover {
+      background-color: #3d52cc;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(76, 99, 255, 0.5);
+    }
+
+    /* Modal Styles */
+    #teamModal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #teamModalContent {
+      background-color: white;
+      margin: 2% auto;
+      padding: 30px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .team-details h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 2em;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .team-details h3 {
+      color: #764ba2;
+      margin-top: 20px;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      border-left: 4px solid #764ba2;
+      padding-left: 10px;
+    }
+
+    .team-details p {
+      margin: 12px 0;
+      line-height: 1.6;
+      color: #555;
+      font-size: 0.95em;
+    }
+
+    .team-details strong {
+      color: #333;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 20px 0;
+    }
+
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+      transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+      color: #000;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8em;
+      }
+
+      .team-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .team-name {
+        margin-bottom: 15px;
+      }
+
+      #teamModalContent {
+        width: 95%;
+        margin: 5% auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>World Cup 2026 - Team Data</h1>
+  <p class="subtitle">Explore team statistics and information</p>
+  
+  <button class="back-btn" onclick="window.location.href='index.html'">← Back to Cover Page</button>
+
+  <div class="team-grid" id="teamGrid"></div>
+</div>
+
+<!-- Modal for Team Info -->
+<div id="teamModal">
+  <div id="teamModalContent"></div>
+</div>
+
+<script>
+
+const teamsStrength = {
+  Brazil: 94,
+  Argentina: 93,
+  France: 92,
+  Germany: 90,
+  Spain: 89,
+  England: 88,
+  Portugal: 87,
+  Netherlands: 86,
+  Italy: 85,
+  Belgium: 84,
+  Uruguay: 83,
+  Croatia: 82,
+  Mexico: 81,
+  USA: 80,
+  Japan: 79,
+  "South Korea": 78,
+  Morocco: 82,
+  Canada: 75,
+  Australia: 76,
+  Ecuador: 77,
+  "Ivory Coast": 78,
+  Tunisia: 74,
+  Iran: 75,
+  "Saudi Arabia": 73,
+  Senegal: 81,
+  Norway: 80,
+  Austria: 79,
+  Algeria: 78,
+  Colombia: 82,
+  Uzbekistan: 72,
+  Ghana: 76,
+  Panama: 70,
+  Paraguay: 75,
+  Scotland: 74,
+  Egypt: 76,
+  "New Zealand": 65,
+  "Cape Verde": 68,
+  Jordan: 67,
+  Haiti: 64,
+  Turkey: 78,
+  Sweden: 80,
+  Poland: 79,
+  Ukraine: 78,
+  "South Africa": 75,
+  Qatar: 85,
+  Switzerland: 82,
+  Romania: 73,
+  Greece: 71,
+  Serbia: 76
+};
+
+const teamInfo = {
+  Brazil: {
+    region: "South America",
+    confederation: "CONMEBOL",
+    description: "Brazil is the most successful nation in World Cup history with 5 titles (1958, 1962, 1970, 1994, 2002). They are known for technical excellence and attacking flair.",
+    worldCupsParticipated: 22,
+    worldCupsWon: 5,
+    totalMatches: 114,
+    formation: "4-3-3",
+    captain: "Neymar",
+    starting11: "Alisson, Danilo, Marquinhos, Thiago Silva, Vinícius Júnior, Casemiro, Lucas Paquetá, Neymar, Richarlison, Rodrygo, Vinicius Jr",
+    substitutes: "Ederson, Éder Militão, Alex Sandro, Fred, João Gomes, Antony, Gabriel Jesus",
+    totalGoals: 238,
+    penaltiesFaced: 18,
+    homeWinPercentage: "72%",
+    awayWinPercentage: "58%",
+    manager: "Carlo Ancelotti"
+  },
+  Argentina: {
+    region: "South America",
+    confederation: "CONMEBOL",
+    description: "Argentina won the 2022 FIFA World Cup in Qatar. Held 3 World Cup titles total (1978, 1986, 2022). Known for midfield excellence and passionate play.",
+    worldCupsParticipated: 18,
+    worldCupsWon: 3,
+    totalMatches: 97,
+    formation: "4-2-3-1",
+    captain: "Lionel Messi",
+    starting11: "Gonzalo Montiel, Cristian Romero, Nicolás Otamendi, Nicolás Tagliafico, Rodrigo De Paul, Enzo Fernández, Alexis Mac Allister, Ángel Di María, Alejandro Garnacho, Julián Álvarez, Lionel Messi",
+    substitutes: "Juan Musso, Germán Pezzella, Lisandro Martínez, Gonzalo Higuaín, Sergio Agüero, Paulo Dybala",
+    totalGoals: 201,
+    penaltiesFaced: 15,
+    homeWinPercentage: "68%",
+    awayWinPercentage: "55%",
+    manager: "Lionel Scaloni"
+  },
+  France: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "France won the 2018 World Cup in Russia. 2-time World Cup winners (1998, 2018). Known for defensive solidity and attacking prowess.",
+    worldCupsParticipated: 16,
+    worldCupsWon: 2,
+    totalMatches: 89,
+    formation: "4-2-3-1",
+    captain: "Kylian Mbappe",
+    starting11: "Hugo Lloris, Benjamin Pavard, Raphaël Varane, William Saliba, Théo Hernandez, N'Golo Kanté, Eduardo Camavinga, Kylian Mbappe, Antoine Griezmann, Olivier Giroud, Adrien Rabiot",
+    substitutes: "Alphonse Areola, Axel Disasi, Jules Koundé, Aurélien Tchouaméni, Dayot Upamecano, Matteo Guendouzi",
+    totalGoals: 195,
+    penaltiesFaced: 22,
+    homeWinPercentage: "75%",
+    awayWinPercentage: "62%",
+    manager: "Didier Deschamps"
+  },
+  Germany: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "Germany is a powerhouse with 4 World Cup titles (1954, 1974, 1990, 2014). Known for tactical discipline and efficient play.",
+    worldCupsParticipated: 20,
+    worldCupsWon: 4,
+    totalMatches: 114,
+    formation: "4-1-4-1",
+    captain: "Manuel Neuer",
+    starting11: "Manuel Neuer, Antonio Rüdiger, Serge Gnabry, Ilkay Gündoğan, Joshua Kimmich, Leon Goretzka, Jamal Musiala, Florian Wirtz, Thomas Müller, Kai Havertz, Leroy Sané",
+    substitutes: "Yann Sommer, Matthias Ginter, Nico Schlotterbeck, Bayer Leverkusen Squad Members",
+    totalGoals: 216,
+    penaltiesFaced: 19,
+    homeWinPercentage: "70%",
+    awayWinPercentage: "60%",
+    manager: "Julian Nagelsmann"
+  },
+  Spain: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "Spain won the 2010 World Cup in South Africa. 1-time World Cup winner. Known for possession-based tiki-taka style football.",
+    worldCupsParticipated: 16,
+    worldCupsWon: 1,
+    totalMatches: 85,
+    formation: "4-3-3",
+    captain: "Sergio Busquets",
+    starting11: "Unai Simón, Serginio Dest, Aymeric Laporte, Íñigo Martínez, Éric García, Sergio Busquets, Pedri, Gavi, Jordi Alba, Ferran Torres, Álvaro Morata",
+    substitutes: "Robert Sánchez, Brice Samba, Alejandro Balde, Carlos Soler, Koke Resurrección",
+    totalGoals: 187,
+    penaltiesFaced: 16,
+    homeWinPercentage: "71%",
+    awayWinPercentage: "59%",
+    manager: "Luis de la Fuente"
+  },
+  England: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "England won the 1966 World Cup. They reached Euro 2020 final and are consistently competitive with a talented young squad.",
+    worldCupsParticipated: 16,
+    worldCupsWon: 1,
+    totalMatches: 88,
+    formation: "3-4-3",
+    captain: "Harry Kane",
+    starting11: "Jordan Pickford, Kyle Walker, John Stones, Luke Shaw, Aaron Wan-Bissaka, Declan Rice, James Maddison, Phil Foden, Harry Kane, Bukayo Saka, Jude Bellingham",
+    substitutes: "Sam Johnstone, Tyrone Mings, Fikayo Tomori, Conor Coady, Jadon Sancho",
+    totalGoals: 179,
+    penaltiesFaced: 20,
+    homeWinPercentage: "69%",
+    awayWinPercentage: "54%",
+    manager: "Gareth Southgate"
+  },
+  Portugal: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "Portugal won Euro 2016 and Nations League 2019. Strong consistent performer in World Cups with experienced squad.",
+    worldCupsParticipated: 8,
+    worldCupsWon: 0,
+    totalMatches: 42,
+    formation: "4-3-3",
+    captain: "Cristiano Ronaldo",
+    starting11: "Rui Patrício, João Cancelo, Pepe, Rúben Dias, Nélson Semedo, Bruno Fernandes, Vítor Ferreira, Bernardo Silva, Cristiano Ronaldo, Gonçalo Guedes, Ricardo Horta",
+    substitutes: "Anthony Lopes, Diogo Dalot, Nuno Mendes, Rúben Neves, João Félix",
+    totalGoals: 128,
+    penaltiesFaced: 12,
+    homeWinPercentage: "67%",
+    awayWinPercentage: "51%",
+    manager: "Roberto Martínez"
+  },
+  Netherlands: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "Netherlands is known for their rich footballing tradition and attractive attacking style. 0 World Cup titles but several Finals appearances.",
+    worldCupsParticipated: 11,
+    worldCupsWon: 0,
+    totalMatches: 52,
+    formation: "4-3-3",
+    captain: "Virgil van Dijk",
+    starting11: "Andries Noppert, Denzel Dumfries, Virgil van Dijk, Matteo Darmian, Daley Blind, Frenkie de Jong, Marten de Roon, Steven Berghuis, Steven Bergwijn, Cody Gakpo, Memphis Depay",
+    substitutes: "Mark Flekken, Nathan Aké, Jurriën Timber, Tyrell Malacia, Georginio Wijnaldum",
+    totalGoals: 145,
+    penaltiesFaced: 14,
+    homeWinPercentage: "68%",
+    awayWinPercentage: "56%",
+    manager: "Ronald Koeman"
+  },
+  Italy: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "Italy is a 4-time World Cup winner (1934, 1938, 1982, 2006). Known for defensive excellence and tactical organization.",
+    worldCupsParticipated: 18,
+    worldCupsWon: 4,
+    totalMatches: 98,
+    formation: "4-2-3-1",
+    captain: "Giorgio Chiellini",
+    starting11: "Gianluigi Donnarumma, Alessandro Florenzi, Alessandro Bastoni, Leonardo Bonucci, Matteo Darmian, Marco Verratti, Nicolò Barella, Federico Chiesa, Ciro Immobile, Lorenzo Insigne, Jorginho",
+    substitutes: "Silvio Microdimitri, Giancarlo Giudice, Antonio Cassano, Gianluigi Buffon",
+    totalGoals: 168,
+    penaltiesFaced: 17,
+    homeWinPercentage: "70%",
+    awayWinPercentage: "57%",
+    manager: "Luciano Spalletti"
+  },
+  Belgium: {
+    region: "Europe",
+    confederation: "UEFA",
+    description: "Belgium has a golden generation of talented players. Third place finish in 2018 World Cup. Consistent contenders in major tournaments.",
+    worldCupsParticipated: 14,
+    worldCupsWon: 0,
+    totalMatches: 67,
+    formation: "3-4-2-1",
+    captain: "Kevin De Bruyne",
+    starting11: "Thibaut Courtois, Toby Alderweireld, Jan Vertonghen, Thomas Vermaelen, Thorgan Hazard, Youri Tielemans, Axel Witsel, Kevin De Bruyne, Eden Hazard, Romelu Lukaku, Michy Batshuayi",
+    substitutes: "Simon Mignolet, Dedryck Boyata, Nacho Fernández, Christian Benteke",
+    totalGoals: 152,
+    penaltiesFaced: 13,
+    homeWinPercentage: "66%",
+    awayWinPercentage: "53%",
+    manager: "Domenico Tedesco"
+  },
+  Uruguay: {
+    region: "South America",
+    confederation: "CONMEBOL",
+    description: "Uruguay is a 2-time World Cup winner (1930, 1950). Strong football tradition and competitive spirit with passionate fans.",
+    worldCupsParticipated: 15,
+    worldCupsWon: 2,
+    totalMatches: 72,
+    formation: "4-4-2",
+    captain: "Luis Suarez",
+    starting11: "Fernando Muslera, Sergio Rochet, Martín Cáceres, Diego Godín, Giorgian de Arrascaeta, Federico Valverde, Lucas Torreira, Nicolás Lodeiro, Luis Suárez, Edinson Cavani, Facundo Pellistri",
+    substitutes: "Keylor Navas, Carlos Sánchez, Miguel Layún, Cristian Benavente",
+    totalGoals: 134,
+    penaltiesFaced: 11,
+    homeWinPercentage: "65%",
+    awayWinPercentage: "50%",
+    manager: "Marcelo Bielsa"
+  },
+  Mexico: {
+    region: "North America",
+    confederation: "CONCACAF",
+    description: "Mexico is the strongest CONCACAF team. Hosted World Cup twice (1970, 1986). Always competitive with passionate support.",
+    worldCupsParticipated: 17,
+    worldCupsWon: 0,
+    totalMatches: 63,
+    formation: "4-3-3",
+    captain: "Hirving Lozano",
+    starting11: "Alfredo Talavera, Miguel Layún, Néstor Araujo, Héctor Moreno, Jorge Sánchez, Edson Álvarez, Andrés Guardado, Hirving Lozano, Alexis Vega, Santiago Giménez, Raúl Jiménez",
+    substitutes: "Guillermo Ochoa, Héctor Herrera, Rafa Márquez, Juan Carlos Osorio",
+    totalGoals: 118,
+    penaltiesFaced: 14,
+    homeWinPercentage: "61%",
+    awayWinPercentage: "46%",
+    manager: "Jimmy Lozano"
+  },
+  USA: {
+    region: "North America",
+    confederation: "CONCACAF",
+    description: "USA hosting the 2026 World Cup on home soil. Young talented squad with significant investment in football development.",
+    worldCupsParticipated: 11,
+    worldCupsWon: 0,
+    totalMatches: 48,
+    formation: "4-2-3-1",
+    captain: "Christian Pulisic",
+    starting11: "Matt Turner, Sergiño Dest, Joe Scally, Aaron Long, Gio Reyna, Weston McKennie, Tyler Adams, Christian Pulisic, Antonee Robinson, Folarin Balogun, Yunus Musah",
+    substitutes: "Zack Steffen, Cameron Carter-Vickers, Emily Sonnett, Kellyn Acosta",
+    totalGoals: 95,
+    penaltiesFaced: 9,
+    homeWinPercentage: "64%",
+    awayWinPercentage: "48%",
+    manager: "Gregg Berhalter"
+  },
+  Colombia: {
+    region: "South America",
+    confederation: "CONMEBOL",
+    description: "Colombia has talented attacking players. Known for energetic and attacking style of play with creative flair.",
+    worldCupsParticipated: 6,
+    worldCupsWon: 0,
+    totalMatches: 31,
+    formation: "4-2-3-1",
+    captain: "James Rodriguez",
+    starting11: "David Ospina, Álvaro Montero, Yerson Mosquera, Carlos Cuesta, Atalanta Moreno, Mateus Uribe, Juan Fernando Quintero, James Rodríguez, Luis Díaz, Duván Zapata, Alejandro Garnacho",
+    substitutes: "Camilo Vargas, Andrés Andrade, Oscar Murillo, Leandro Bacuna",
+    totalGoals: 87,
+    penaltiesFaced: 8,
+    homeWinPercentage: "62%",
+    awayWinPercentage: "49%",
+    manager: "Néstor Lorenzo"
+  },
+  Japan: {
+    region: "Asia",
+    confederation: "AFC",
+    description: "Japan is the most successful Asian team in World Cup history. Known for technical excellence and tactical discipline.",
+    worldCupsParticipated: 7,
+    worldCupsWon: 0,
+    totalMatches: 28,
+    formation: "4-2-3-1",
+    captain: "Takumi Minamino",
+    starting11: "Shuichi Gonda, Yuto Nagatomo, Hiroki Ito, Mitsuki Saito, Hidemasa Morita, Reo Hatate, Takumi Minamino, Kaoru Mitoma, Daichi Kamada, Ritsu Doan, Takefusa Kubo",
+    substitutes: "Eiji Kawashima, Naomichi Ueda, Hiroya Nakamura, Kaoru Mitoma",
+    totalGoals: 68,
+    penaltiesFaced: 6,
+    homeWinPercentage: "61%",
+    awayWinPercentage: "45%",
+    manager: "Hajime Moriyasu"
+  },
+  "South Korea": {
+    region: "Asia",
+    confederation: "AFC",
+    description: "South Korea is a competitive Asian team with strong domestic league. Always organized defensively and disciplined.",
+    worldCupsParticipated: 11,
+    worldCupsWon: 0,
+    totalMatches: 44,
+    formation: "4-3-3",
+    captain: "Son Heung-min",
+    starting11: "Jo Hyeon-woo, Lee Min-jae, Kim Min-jae, Park Min-jae, Lee Kang-in, Hwang In-beom, Jung Woo-young, Hwang Ui-jo, Son Heung-min, Kim Jin-su, Na Song-guk",
+    substitutes: "Kim Seung-gyu, Hong Chul, Lee Sang-min, Kang-in Lee",
+    totalGoals: 102,
+    penaltiesFaced: 10,
+    homeWinPercentage: "63%",
+    awayWinPercentage: "47%",
+    manager: "Paulo Bento"
+  },
+  Morocco: {
+    region: "Africa",
+    confederation: "CAF",
+    description: "Morocco reached the 2022 World Cup semi-finals. Talented squad with strong defensive organization and rising star players.",
+    worldCupsParticipated: 6,
+    worldCupsWon: 0,
+    totalMatches: 25,
+    formation: "4-3-3",
+    captain: "Romain Saïss",
+    starting11: "Bono, Achraf Hakimi, Romain Saïss, Nayef Aguerd, Noussair Mazraoui, Sofyan Amrabat, Selim Benyattou, Hakim Ziyech, Youssef En-Nesyri, Sofiane Boufal, Zakaria Aboukhlal",
+    substitutes: "Munir, Amine Harit, Azeddine Onnis, Sofyan Amrabat",
+    totalGoals: 56,
+    penaltiesFaced: 5,
+    homeWinPercentage: "59%",
+    awayWinPercentage: "42%",
+    manager: "Walid Regragui"
+  },
+  Senegal: {
+    region: "Africa",
+    confederation: "CAF",
+    description: "Senegal won Africa Cup of Nations 2022. Strongest African representative with creative and dynamic players.",
+    worldCupsParticipated: 3,
+    worldCupsWon: 0,
+    totalMatches: 12,
+    formation: "4-2-3-1",
+    captain: "Kalidou Koulibaly",
+    starting11: "Édouard Mendy, Abdou Diallo, Kalidou Koulibaly, Salif Sané, Pape Sarr, Cheikhou Kouyaté, Idrissa Gueye, Sadio Mané, Habib Diallo, Boulaye Dia, Sarr",
+    substitutes: "Samba Diop, Moustapha Sall, Cheikhou Kouyaté Jr, Bamba Diop",
+    totalGoals: 31,
+    penaltiesFaced: 3,
+    homeWinPercentage: "58%",
+    awayWinPercentage: "40%",
+    manager: "Aliou Cissé"
+  }
+};
+
+function createTeamCard(teamName){
+  let card = document.createElement("div");
+  card.className = "team-card";
+  card.innerHTML = `
+    <div class="team-name">${teamName}</div>
+    <button class="learn-more-btn" onclick="showTeamModal('${teamName.replace(/'/g, "\\'")}')" >Learn More</button>
+  `;
+  return card;
+}
+
+function showTeamModal(teamName){
+  let modal = document.getElementById("teamModal");
+  let content = document.getElementById("teamModalContent");
+  
+  let info = teamInfo[teamName] || {
+    region: "TBD",
+    confederation: "TBD",
+    description: "Information coming soon.",
+    worldCupsParticipated: "TBD",
+    worldCupsWon: "TBD",
+    totalMatches: "TBD",
+    formation: "TBD",
+    totalGoals: "TBD",
+    penaltiesFaced: "TBD",
+    homeWinPercentage: "TBD",
+    awayWinPercentage: "TBD",
+    captain: "TBD",
+    starting11: "TBD",
+    substitutes: "TBD",
+    manager: "TBD"
+  };
+  
+  let strength = teamsStrength[teamName];
+  let performance = Math.round((strength / 94) * 100);
+  
+  content.innerHTML = `
+    <div class="team-details">
+      <button class="close-btn" onclick="closeTeamModal()">&times;</button>
+      <h2>${teamName}</h2>
+      <p><strong>Region:</strong> ${info.region}</p>
+      <p><strong>Confederation:</strong> ${info.confederation}</p>
+      <p><strong>Description:</strong> ${info.description}</p>
+      <hr>
+      <h3>World Cup History</h3>
+      <p><strong>World Cups Participated:</strong> ${info.worldCupsParticipated}</p>
+      <p><strong>World Cups Won:</strong> ${info.worldCupsWon}</p>
+      <p><strong>Total Matches Played:</strong> ${info.totalMatches}</p>
+      <hr>
+      <h3>Team Statistics</h3>
+      <p><strong>Formation:</strong> ${info.formation}</p>
+      <p><strong>Total Goals Scored:</strong> ${info.totalGoals}</p>
+      <p><strong>Penalties Faced:</strong> ${info.penaltiesFaced}</p>
+      <p><strong>Home Win Percentage:</strong> ${info.homeWinPercentage}</p>
+      <p><strong>Away Win Percentage:</strong> ${info.awayWinPercentage}</p>
+      <hr>
+      <h3>Team Composition</h3>
+      <p><strong>Strength Rating:</strong> ${strength}/94</p>
+      <p><strong>Performance:</strong> ${performance}%</p>
+      <p><strong>Manager:</strong> ${info.manager}</p>
+      <p><strong>Captain:</strong> ${info.captain}</p>
+      <p><strong>Starting 11:</strong> ${info.starting11}</p>
+      <p><strong>Substitutes:</strong> ${info.substitutes}</p>
+      <div class="team-chart" style="margin-top:20px;">
+        <canvas id="teamStatsChart-${teamName.replace(/\s+/g,'_')}" style="max-width:100%;height:300px"></canvas>
+      </div>
+    </div>
+  `;
+  
+  // generate the chart for this team
+  createTeamStatsChart(teamName, info, strength, performance, `teamStatsChart-${teamName.replace(/\s+/g,'_')}`);
+  modal.style.display = "block";
+}
+
+function closeTeamModal(){
+  document.getElementById("teamModal").style.display = "none";
+}
+
+// helper to render individual team statistics bar chart
+// accepts performance metric and unique canvas id to avoid conflicts
+function createTeamStatsChart(teamName, info, strength, performance, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return; // safety
+  const ctx = canvas.getContext('2d');
+
+  // destroy existing chart instance if present
+  if (ctx.chart) {
+    ctx.chart.destroy();
+  }
+
+  const goals = parseInt(info.totalGoals) || 0;
+  const homeWin = parseInt(info.homeWinPercentage) || 0;
+  const awayWin = parseInt(info.awayWinPercentage) || 0;
+
+  ctx.chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Strength', 'Goals', 'Performance %', 'Home Win %', 'Away Win %'],
+      datasets: [{
+        label: teamName + ' stats',
+        data: [strength, goals, performance, homeWin, awayWin],
+        backgroundColor: ['#4c63ff', '#ff6b6b', '#22c55e', '#fbbf24', '#06b6d4']
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#555' }
+        },
+        x: {
+          ticks: { color: '#555' }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+window.onclick = function(event){
+  let modal = document.getElementById("teamModal");
+  if(event.target == modal){
+    modal.style.display = "none";
+  }
+};
+
+// Create team cards
+let grid = document.getElementById("teamGrid");
+for(let team in teamsStrength){
+  grid.appendChild(createTeamCard(team));
+}
+
+</script>
+
+</body>
+
+</html>

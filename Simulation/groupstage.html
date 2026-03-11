@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>World Cup 2026 Group Stage</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+}
+
+h1{
+margin-top:20px;
+}
+
+.group{
+background:#1e293b;
+padding:20px;
+margin:20px auto;
+width:500px;
+border-radius:10px;
+}
+
+button{
+padding:10px 18px;
+margin:6px;
+border:none;
+border-radius:6px;
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+.reset:hover{
+background:#dc2626;
+}
+
+.popup{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.7);
+}
+
+.popup-content{
+background:#1e293b;
+padding:30px;
+margin:200px auto;
+width:400px;
+border-radius:10px;
+}
+
+.close{
+margin-top:15px;
+background:#ef4444;
+}
+
+/* removed chart styles */
+
+</style>
+
+</head>
+
+<body>
+
+<h1>World Cup 2026 Group Voting</h1>
+
+<button onclick="window.location.href='index.html'" style="padding:10px 20px; margin:10px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer;">Back to Cover</button>
+
+<button onclick="resetVotes()" class="reset" style="padding:10px 20px; margin:10px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer;">Reset All Votes</button>
+
+<button onclick="window.location.href='round32.html'" style="padding:10px 20px; margin:10px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer;">Round of 32</button>
+
+<button onclick="window.location.href='round16.html'" style="padding:10px 20px; margin:10px; background:#8b5cf6; color:white; border:none; border-radius:6px; cursor:pointer;">Round of 16</button>
+
+<button onclick="window.location.href='quarterfinals.html'" style="padding:10px 20px; margin:10px; background:#d946ef; color:white; border:none; border-radius:6px; cursor:pointer;">Quarterfinals</button>
+
+<button onclick="window.location.href='semifinals.html'" style="padding:10px 20px; margin:10px; background:#06b6d4; color:white; border:none; border-radius:6px; cursor:pointer;">Semifinals</button>
+
+<button onclick="window.location.href='final.html'" style="padding:10px 20px; margin:10px; background:#fbbf24; color:black; border:none; border-radius:6px; cursor:pointer;">Final</button>
+
+<div id="groups"></div>
+
+<div id="popup" class="popup">
+
+<div class="popup-content">
+
+<h2 id="popupTitle"></h2>
+
+<p id="popupText"></p>
+
+<button class="close" onclick="closePopup()">Close</button>
+
+</div>
+
+</div>
+
+<script>
+
+const teamsStrength = {
+Brazil:94,
+Argentina:93,
+France:92,
+Germany:90,
+Spain:89,
+England:88,
+Portugal:87,
+Netherlands:86,
+Italy:85,
+Belgium:84,
+Uruguay:83,
+Croatia:82,
+Mexico:81,
+USA:80,
+"United States":80, // Alias for USA
+Japan:79,
+"South Korea":78,
+Morocco:82,
+Canada:75,
+Australia:76,
+Ecuador:77,
+"Ivory Coast":78,
+Tunisia:74,
+Iran:75,
+"Saudi Arabia":73,
+Senegal:81,
+Norway:80,
+Austria:79,
+Algeria:78,
+Colombia:82,
+Uzbekistan:72,
+Ghana:76,
+Panama:70,
+Paraguay:75,
+Scotland:74,
+Egypt:76,
+// Missing teams added below
+"South Africa":73,
+"UEFA Path D winner":77,
+"UEFA Path A winner":78,
+Qatar:79,
+Switzerland:82,
+Haiti:68,
+"UEFA Path C winner":76,
+Curaçao:69,
+"UEFA Path B winner":75,
+"New Zealand":74,
+"Cape Verde":71,
+"IC Path 2 winner":73,
+Jordan:70,
+"IC Path 1 winner":74
+};
+
+// Helper function to safely get team strength
+function getTeamStrength(team) {
+  return teamsStrength[team] || 70; // Default to 70 if team not found
+}
+
+// group definitions used for voting
+const groups = {
+  A:["Mexico","South Africa","South Korea","UEFA Path D winner"],
+  B:["Canada","UEFA Path A winner","Qatar","Switzerland"],
+  C:["Brazil","Morocco","Haiti","Scotland"],
+  D:["United States","Paraguay","Australia","UEFA Path C winner"],
+  E:["Germany","Curaçao","Ivory Coast","Ecuador"],
+  F:["Netherlands","Japan","UEFA Path B winner","Tunisia"],
+  G:["Belgium","Egypt","Iran","New Zealand"],
+  H:["Spain","Cape Verde","Saudi Arabia","Uruguay"],
+  I:["France","Senegal","IC Path 2 winner","Norway"],
+  J:["Argentina","Algeria","Austria","Jordan"],
+  K:["Portugal","IC Path 1 winner","Uzbekistan","Colombia"],
+  L:["England","Croatia","Ghana","Panama"]
+};
+
+// voting helper functions
+function createGroups(){
+  let container=document.getElementById("groups");
+  container.innerHTML = "";
+  for(let g in groups){
+    let div=document.createElement("div");
+    div.className="group";
+    div.id = "group-" + g;
+    let html="<h2>Group "+g+"</h2>";
+    groups[g].forEach(team=>{
+      let votes = getVotes(g, team);
+      html+=`<button onclick="vote('${g}','${team}')">${team} (${votes} votes)</button>`;
+    });
+    div.innerHTML=html;
+    container.appendChild(div);
+  }
+}
+
+function vote(group,team){
+  if(localStorage.getItem("vote_"+group)){
+    alert("You already voted for Group "+group);
+    return;
+  }
+  localStorage.setItem("vote_"+group,team);
+  updateVotes(group, team);
+  showStats(group, team);
+}
+
+function showStats(group, votedTeam){
+  document.getElementById("groups").innerHTML = "";
+  createGroups();
+  let groupDiv = document.getElementById("group-" + group);
+  let html = `<h2>Group ${group}</h2>`;
+  groups[group].forEach(team => {
+    let strength = getTeamStrength(team);
+    let performance = Math.round((strength / 94) * 100);
+    let isQualified = false;
+    let groupTeams = [...groups[group]];
+    let ranked = groupTeams.sort((a,b)=>teamsStrength[b]-teamsStrength[a]);
+    if(ranked.indexOf(team) < 2) isQualified = true;
+    let qualifiedText = isQualified ? " (Qualified)" : "";
+    html += `<div>${team}: ${performance}% performance${qualifiedText}</div>`;
+  });
+  groupDiv.innerHTML = html;
+}
+
+function getVotes(group, team){
+  let votes = JSON.parse(localStorage.getItem("votes") || "{}");
+  if(!votes[group]) votes[group] = {};
+  return votes[group][team] || 0;
+}
+
+function updateVotes(group, team){
+  let votes = JSON.parse(localStorage.getItem("votes") || "{}");
+  if(!votes[group]) votes[group] = {};
+  votes[group][team] = (votes[group][team] || 0) + 1;
+  localStorage.setItem("votes", JSON.stringify(votes));
+}
+
+function resetVotes(){
+  localStorage.removeItem("votes");
+  for(let g in groups){
+    localStorage.removeItem("vote_"+g);
+  }
+  createGroups();
+}
+
+createGroups();
+
+</script>
+
+</body>
+
+</html>
+
+<button onclick="window.location.href='quarterfinals.html'" style="padding:10px 20px; margin:10px; background:#d946ef; color:white; border:none; border-radius:6px; cursor:pointer;">Quarterfinals</button>
+
+<button onclick="window.location.href='semifinals.html'" style="padding:10px 20px; margin:10px; background:#06b6d4; color:white; border:none; border-radius:6px; cursor:pointer;">Semifinals</button>
+
+<button onclick="window.location.href='final.html'" style="padding:10px 20px; margin:10px; background:#fbbf24; color:black; border:none; border-radius:6px; cursor:pointer;">Final</button>
+
+<div id="groups"></div>
+
+<div id="popup" class="popup">
+
+<div class="popup-content">
+
+<h2 id="popupTitle"></h2>
+
+<p id="popupText"></p>
+
+<button class="close" onclick="closePopup()">Close</button>
+
+</div>
+
+</div>
+
+<script>
+
+const teamsStrength = {
+
+Brazil:94,
+Argentina:93,
+France:92,
+Germany:90,
+Spain:89,
+England:88,
+Portugal:87,
+Netherlands:86,
+Italy:85,
+Belgium:84,
+Uruguay:83,
+Croatia:82,
+Mexico:81,
+USA:80,
+Japan:79,
+"South Korea":78,
+Morocco:82,
+Canada:75,
+Australia:76,
+Ecuador:77,
+"Ivory Coast":78,
+Tunisia:74,
+Iran:75,
+"Saudi Arabia":73,
+Senegal:81,
+Norway:80,
+Austria:79,
+Algeria:78,
+Colombia:82,
+Uzbekistan:72,
+Ghana:76,
+Panama:70,
+Paraguay:75,
+Scotland:74,
+Egypt:76,
+};
+
+// groups used for voting
+const groups = {
+  A:["Mexico","South Africa","South Korea","UEFA Path D winner"],
+  B:["Canada","UEFA Path A winner","Qatar","Switzerland"],
+  C:["Brazil","Morocco","Haiti","Scotland"],
+  D:["United States","Paraguay","Australia","UEFA Path C winner"],
+  E:["Germany","Curaçao","Ivory Coast","Ecuador"],
+  F:["Netherlands","Japan","UEFA Path B winner","Tunisia"],
+  G:["Belgium","Egypt","Iran","New Zealand"],
+  H:["Spain","Cape Verde","Saudi Arabia","Uruguay"],
+  I:["France","Senegal","IC Path 2 winner","Norway"],
+  J:["Argentina","Algeria","Austria","Jordan"],
+  K:["Portugal","IC Path 1 winner","Uzbekistan","Colombia"],
+  L:["England","Croatia","Ghana","Panama"]
+};
+
+// voting helper functions
+function createGroups(){
+  let container=document.getElementById("groups");
+  container.innerHTML = "";
+  for(let g in groups){
+    let div=document.createElement("div");
+    div.className="group";
+    div.id = "group-" + g;
+    let html="<h2>Group "+g+"</h2>";
+    groups[g].forEach(team=>{
+      let votes = getVotes(g, team);
+      html+=`<button onclick="vote('${g}','${team}')">${team} (${votes} votes)</button>`;
+    });
+    div.innerHTML=html;
+    container.appendChild(div);
+  }
+}
+
+function vote(group,team){
+  if(localStorage.getItem("vote_"+group)){
+    alert("You already voted for Group "+group);
+    return;
+  }
+  localStorage.setItem("vote_"+group,team);
+  updateVotes(group, team);
+  showStats(group, team);
+}
+
+function showStats(group, votedTeam){
+  document.getElementById("groups").innerHTML = "";
+  createGroups();
+  let groupDiv = document.getElementById("group-" + group);
+  let html = `<h2>Group ${group}</h2>`;
+  groups[group].forEach(team => {
+    let strength = getTeamStrength(team);
+    let performance = Math.round((strength / 94) * 100);
+    let isQualified = false;
+    let groupTeams = [...groups[group]];
+    let ranked = groupTeams.sort((a,b)=>teamsStrength[b]-teamsStrength[a]);
+    if(ranked.indexOf(team) < 2) isQualified = true;
+    let qualifiedText = isQualified ? " (Qualified)" : "";
+    html += `<div>${team}: ${performance}% performance${qualifiedText}</div>`;
+  });
+  groupDiv.innerHTML = html;
+}
+
+function getVotes(group, team){
+  let votes = JSON.parse(localStorage.getItem("votes") || "{}");
+  if(!votes[group]) votes[group] = {};
+  return votes[group][team] || 0;
+}
+
+function updateVotes(group, team){
+  let votes = JSON.parse(localStorage.getItem("votes") || "{}");
+  if(!votes[group]) votes[group] = {};
+  votes[group][team] = (votes[group][team] || 0) + 1;
+  localStorage.setItem("votes", JSON.stringify(votes));
+}
+
+function resetVotes(){
+  localStorage.removeItem("votes");
+  for(let g in groups){
+    localStorage.removeItem("vote_"+g);
+  }
+  createGroups();
+}
+
+createGroups();
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#e0e7ff' },
+          grid: { color: '#374151' }
+        },
+        x: {
+          ticks: { color: '#e0e7ff' },
+          grid: { color: '#374151' }
+        }
+      }
+    }
+  })
+}
+
+function createRegionalChart() {
+  const ctx = document.getElementById('regionalChart').getContext('2d')
+  
+  const regionalData = {
+    'UEFA': 16,
+    'CAF': 9,
+    'AFC': 8,
+    'CONMEBOL': 6,
+    'CONCACAF': 6,
+    'OFC': 1,
+    'Playoffs': 2
+  }
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(regionalData),
+      datasets: [{
+        data: Object.values(regionalData),
+        backgroundColor: [
+          '#3b82f6', '#ef4444', '#eab308', '#22c55e', '#8b5cf6', '#06b6d4', '#f97316'
+        ],
+        borderColor: '#ffffff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#e0e7ff' }
+        }
+      }
+    }
+  })
+}
+
+function createTopTeamsChart() {
+  const ctx = document.getElementById('topTeamsChart').getContext('2d')
+  
+  // Get top 10 teams by strength
+  const sortedTeams = Object.entries(teamsStrength)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+  
+  new Chart(ctx, {
+    type: 'horizontalBar',
+    data: {
+      labels: sortedTeams.map(([team]) => team),
+      datasets: [{
+        label: 'Strength Rating',
+        data: sortedTeams.map(([,strength]) => strength),
+        backgroundColor: '#22c55e',
+        borderColor: '#ffffff',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 94,
+          ticks: { color: '#e0e7ff' },
+          grid: { color: '#374151' }
+        },
+        y: {
+          ticks: { color: '#e0e7ff' },
+          grid: { color: '#374151' }
+        }
+      }
+    }
+  })
+}
+
+function createQualificationChart() {
+  const ctx = document.getElementById('qualificationChart').getContext('2d')
+  
+  // Calculate qualification probabilities for each group
+  const groupQualification = {}
+  
+  Object.entries(groups).forEach(([groupName, teams]) => {
+    const strengths = teams.map(team => teamsStrength[team] || 70)
+    const avgStrength = strengths.reduce((a, b) => a + b, 0) / strengths.length
+    const top2Avg = strengths.sort((a,b) => b-a).slice(0,2).reduce((a,b) => a+b,0) / 2
+    groupQualification[groupName] = Math.round((top2Avg / 94) * 100)
+  })
+  
+  const sortedGroups = Object.entries(groupQualification)
+    .sort(([,a], [,b]) => b - a)
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: sortedGroups.map(([group]) => `Group ${group}`),
+      datasets: [{
+        label: 'Qualification Difficulty (%)',
+        data: sortedGroups.map(([,prob]) => prob),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { color: '#e0e7ff' },
+          grid: { color: '#374151' }
+        },
+        x: {
+          ticks: { color: '#e0e7ff' },
+          grid: { color: '#374151' }
+        }
+      }
+    }
+  })
+}
+
+</script>
+
+<div style=\"position: fixed; bottom: 30px; right: 30px; z-index: 1000;\">\n  <button onclick=\"window.location.href='round32.html'\" style=\"padding: 15px 40px; font-size: 18px; background: #4ade80; color: black; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4); transition: all 0.3s;\">Next: Round of 32 →</button>\n</div>
+
+</body>
+
+</html>
